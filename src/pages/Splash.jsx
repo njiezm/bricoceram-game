@@ -1,6 +1,28 @@
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Trophy } from 'lucide-react'; // Utilisation d'icônes pour un look plus pro
+
+// Les icônes MapPin et Trophy de lucide-react sont remplacées par des composants SVG intégrés
+// pour éliminer la dépendance et résoudre l'erreur de compilation.
+
+// Composant SVG pour une épingle de carte (remplace MapPin)
+const MapPinIcon = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
+        <circle cx="12" cy="10" r="3"/>
+    </svg>
+);
+
+// Composant SVG pour un trophée (remplace Trophy)
+const TrophyIcon = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M6 9H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h2"/>
+        <path d="M18 9h2a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1h-2"/>
+        <path d="M4 22h16"/>
+        <path d="M10 14.66V15c0 1.1.9 2 2 2s2-.9 2-2v-.34c.81-.46 1.4-1.24 1.4-2.16 0-1.38-1.12-2.5-2.5-2.5S10.5 11.12 10.5 12.5c0 .92.59 1.7 1.4 2.16Z"/>
+        <path d="M12 21a5 5 0 0 0 5-5V8H7v8a5 5 0 0 0 5 5Z"/>
+    </svg>
+);
+
 
 // La classe principale App est définie pour être le composant exporté par défaut.
 const App = ({ player, savePlayer, slug }) => {
@@ -265,14 +287,14 @@ const App = ({ player, savePlayer, slug }) => {
                     
                     {/* Rangée 1 : Martinique & Guyane (utilisant la grille CSS) */}
                     <div className="button-grid">
-                        <DepartmentButton dept="Martinique" icon={MapPin} />
-                        <DepartmentButton dept="Guyane" icon={MapPin} />
+                        <DepartmentButton dept="Martinique" icon={MapPinIcon} />
+                        <DepartmentButton dept="Guyane" icon={MapPinIcon} />
                     </div>
 
                     {/* Rangée 2 : Guadeloupe (centré) */}
                     <div className="guadeloupe-container">
                         <div className="guadeloupe-button-wrapper">
-                            <DepartmentButton dept="Guadeloupe" icon={MapPin} />
+                            <DepartmentButton dept="Guadeloupe" icon={MapPinIcon} />
                         </div>
                     </div>
 
@@ -280,7 +302,7 @@ const App = ({ player, savePlayer, slug }) => {
 
                 {/* Texte final */}
                 <footer className="footer-text">
-                    <Trophy className="footer-text-icon" />
+                    <TrophyIcon className="footer-text-icon" />
                     Sélectionnez votre région pour commencer et tenter de gagner !
                 </footer>
             </div>
