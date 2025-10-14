@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 // --- CONSTANTES GLOBALES AMÉLIORÉES ---
-const SUCCESS_THRESHOLD = 0.7;
+const SUCCESS_THRESHOLD = 0.9;
 const START_TIME = 30;
 
 // Épaisseur du trait de l'utilisateur (AUGMENTÉ pour Mobile First et facilité)
