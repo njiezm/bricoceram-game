@@ -47,8 +47,8 @@ export default function FormApp() {
     const { dept, slug } = useParams();
 
     const [form, setForm] = useState({ 
-        name: '', email: '', tel: '', birthdate: '', 
-        brandOptin: 'no', contactChannel: null, partnerOptin: false 
+        firstName: '', lastName: '', email: '', tel: '', postalCode: '',
+        termsAccepted: false, brandOptin: 'no', contactChannel: null
     });
     const [loading, setLoading] = useState(false);
     const [modalMessage, setModalMessage] = useState(null);
@@ -57,15 +57,35 @@ export default function FormApp() {
         const { name, value, type, checked } = e.target;
         if (name === 'brandOptin') {
             const newValue = checked ? 'yes' : 'no';
-            setForm(prev => ({ ...prev, brandOptin: newValue, contactChannel: newValue === 'no' ? null : prev.contactChannel }));
+            setForm(prev => ({ 
+                ...prev, 
+                brandOptin: newValue, 
+                contactChannel: newValue === 'no' ? null : prev.contactChannel 
+            }));
         } else {
-            setForm(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+            setForm(prev => ({ 
+                ...prev, 
+                [name]: type === 'checkbox' ? checked : value 
+            }));
         }
     };
 
     const handleSubmit = async e => {
         e.preventDefault();
         if (loading) return;
+        
+        // Validation des champs obligatoires
+        if (!form.firstName || !form.lastName || !form.email || !form.tel || !form.postalCode) {
+            setModalMessage("Veuillez remplir tous les champs obligatoires.");
+            return;
+        }
+        
+        // Validation des conditions
+        if (!form.termsAccepted) {
+            setModalMessage("Veuillez accepter le règlement du jeu et confirmer avoir plus de 18 ans.");
+            return;
+        }
+        
         if (form.brandOptin === 'yes' && !form.contactChannel) {
             setModalMessage("Veuillez choisir un canal de communication.");
             return;
@@ -73,7 +93,12 @@ export default function FormApp() {
 
         setLoading(true);
         try {
-            const { id: participantId } = await registerParticipant({ ...form, dept, slug, contactChannel: form.brandOptin === 'yes' ? form.contactChannel : null });
+            const { id: participantId } = await registerParticipant({ 
+                ...form, 
+                dept, 
+                slug, 
+                contactChannel: form.brandOptin === 'yes' ? form.contactChannel : null 
+            });
             navigate(`/${dept}/${slug}/anniversaire/game/${participantId}_${slug}`);
         } catch {
             setModalMessage("Une erreur est survenue lors de l'inscription.");
@@ -95,17 +120,19 @@ export default function FormApp() {
     return (
         <>
             <style>{`
-                :root {
-                    --primary-blue: #1e40af;
-                    --light-blue: #3b82f6;
-                    --accent-red: #dc2626;
-                    --accent-red-dark: #b91c1c;
-                    --red-light: #fee2e2;
-                    --gold: #fbbf24;
-                    --gold-light: #fef3c7;
-                    --gray-bg: #f0f9ff;
-                    --text-blue: #1d4ed8;
-                    --white: #ffffff;
+                /* Reset CSS pour un affichage plein écran parfait */
+                * { box-sizing: border-box; }
+                html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Inter', sans-serif; }
+
+                .form-container {
+                    width: 100vw;
+                    height: 100vh;
+                    display: flex;
+                    flex-direction: column;
+                    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #fef3c7 100%);
+                    position: relative;
+                    overflow-y: auto;
+                    overflow-x: hidden;
                 }
 
                 @keyframes float {
@@ -114,88 +141,20 @@ export default function FormApp() {
                     100% { transform: translateY(0px); }
                 }
 
-                @keyframes pulse {
-                    0% { transform: scale(1); }
-                    50% { transform: scale(1.05); }
-                    100% { transform: scale(1); }
-                }
-
-                @keyframes sparkle {
-                    0% { opacity: 0; transform: scale(0); }
-                    50% { opacity: 1; transform: scale(1); }
-                    100% { opacity: 0; transform: scale(0); }
-                }
-
-                body {
-                    margin: 0;
-                    padding: 0;
-                    font-family: 'Inter', sans-serif;
-                    background: linear-gradient(135deg, var(--gray-bg) 0%, #e0f2fe 50%, var(--gold-light) 100%);
-                    min-height: 100vh;
-                }
-
-                .form-container {
-                    position: relative;
-                    width: 100%;
-                    min-height: 100vh;
-                    display: flex;
-                    flex-direction: column;
-                    background-color: var(--white);
-                    box-sizing: border-box;
-                    overflow-x: hidden;
-                }
-
                 .floating-element {
                     position: absolute;
                     border-radius: 50%;
                     opacity: 0.1;
                     z-index: 1;
                 }
-
-                .floating-element-1 {
-                    top: 10%;
-                    left: 5%;
-                    width: 80px;
-                    height: 80px;
-                    background: var(--primary-blue);
-                    animation: float 6s ease-in-out infinite;
-                }
-
-                .floating-element-2 {
-                    top: 20%;
-                    right: 8%;
-                    width: 60px;
-                    height: 60px;
-                    background: var(--accent-red);
-                    animation: float 8s ease-in-out infinite reverse;
-                }
-
-                .floating-element-3 {
-                    bottom: 15%;
-                    left: 10%;
-                    width: 70px;
-                    height: 70px;
-                    background: var(--gold);
-                    animation: float 7s ease-in-out infinite;
-                }
-
-                .sparkle {
-                    position: absolute;
-                    width: 10px;
-                    height: 10px;
-                    background: var(--gold);
-                    border-radius: 50%;
-                    animation: sparkle 2s ease-in-out infinite;
-                }
-
-                .sparkle-1 { top: 30%; right: 20%; animation-delay: 0.5s; }
-                .sparkle-2 { top: 60%; left: 15%; animation-delay: 1s; }
-                .sparkle-3 { bottom: 25%; right: 25%; animation-delay: 1.5s; }
+                .floating-element-1 { top: 10%; left: 5%; width: 80px; height: 80px; background: #1e40af; animation: float 6s ease-in-out infinite; }
+                .floating-element-2 { top: 20%; right: 8%; width: 60px; height: 60px; background: #dc2626; animation: float 8s ease-in-out infinite reverse; }
+                .floating-element-3 { bottom: 15%; left: 10%; width: 70px; height: 70px; background: #fbbf24; animation: float 7s ease-in-out infinite; }
 
                 .anniversary-banner {
                     position: relative;
-                    background: linear-gradient(90deg, var(--gold), var(--accent-red));
-                    color: var(--white);
+                    background: linear-gradient(90deg, #fbbf24, #dc2626);
+                    color: white;
                     padding: 0.75rem;
                     text-align: center;
                     font-weight: bold;
@@ -205,28 +164,27 @@ export default function FormApp() {
                     z-index: 10;
                 }
 
-                .form-card {
-                    position: relative;
-                    z-index: 10;
-                    width: 100%;
-                    padding: 1.5rem;
+                .form-content {
                     flex-grow: 1;
                     display: flex;
                     flex-direction: column;
-                    box-sizing: border-box;
+                    padding: 1.5rem;
+                    padding-top: 0;
                 }
 
                 .form-header {
                     text-align: center;
                     margin-bottom: 1.5rem;
-                    padding-bottom: 1rem;
-                    border-bottom: 2px solid var(--red-light);
+                    padding: 1rem;
+                    background: rgba(255, 255, 255, 0.9);
+                    border-radius: 15px;
+                    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
                 }
 
                 .header-icon {
                     width: 3rem;
                     height: 3rem;
-                    color: var(--accent-red);
+                    color: #dc2626;
                     margin-bottom: 0.5rem;
                 }
 
@@ -234,29 +192,44 @@ export default function FormApp() {
                     margin: 0.5rem 0;
                     font-size: 1.8rem;
                     font-weight: 800;
-                    color: var(--primary-blue);
+                    color: #1e40af;
                 }
 
-                .dept-info {
-                    margin: 0;
-                    font-size: 1rem;
-                    color: var(--text-blue);
-                    font-weight: 500;
+                .instruction {
+                    text-align: center;
+                    margin-bottom: 1.5rem;
+                    padding: 1rem;
+                    background: rgba(255, 255, 255, 0.9);
+                    border-radius: 15px;
+                    font-size: 1.1rem;
+                    font-weight: 600;
+                    color: #1e40af;
+                    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                }
+
+                .form-card {
+                    background: rgba(255, 255, 255, 0.9);
+                    border-radius: 15px;
+                    padding: 1.5rem;
+                    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                    flex-grow: 1;
+                    display: flex;
+                    flex-direction: column;
                 }
 
                 .input-group {
                     margin-bottom: 1.5rem;
                 }
 
-                .postit-label {
+                .input-label {
                     display: block;
                     margin-bottom: 0.5rem;
                     font-weight: 600;
-                    color: var(--primary-blue);
+                    color: #1e40af;
                     font-size: 1rem;
                 }
 
-                input[type="text"], input[type="email"], input[type="tel"], input[type="date"] {
+                input[type="text"], input[type="email"], input[type="tel"] {
                     width: 100%;
                     padding: 0.75rem;
                     border: 2px solid #e5e7eb;
@@ -266,27 +239,25 @@ export default function FormApp() {
                     transition: border-color 0.3s;
                 }
 
-                input[type="text"]:focus, input[type="email"]:focus, input[type="tel"]:focus, input[type="date"]:focus {
+                input[type="text"]:focus, input[type="email"]:focus, input[type="tel"]:focus {
                     outline: none;
-                    border-color: var(--primary-blue);
-                }
-
-                h3 {
-                    margin: 1.5rem 0 1rem;
-                    font-size: 1.2rem;
-                    color: var(--primary-blue);
-                    font-weight: 700;
+                    border-color: #1e40af;
                 }
 
                 .checkbox-group {
                     display: flex;
                     align-items: flex-start;
-                    margin-bottom: 1rem;
+                    margin-bottom: 1.5rem;
+                    padding: 1rem;
+                    background: rgba(240, 249, 255, 0.5);
+                    border-radius: 0.5rem;
                 }
 
                 .checkbox-group input[type="checkbox"] {
                     margin-right: 0.75rem;
                     margin-top: 0.25rem;
+                    min-width: 20px;
+                    height: 20px;
                 }
 
                 .checkbox-group label {
@@ -295,53 +266,92 @@ export default function FormApp() {
                     line-height: 1.4;
                 }
 
-                .contact-channel-container {
-                    margin: 1rem 0 1.5rem;
-                    padding: 1rem;
-                    background-color: var(--gray-bg);
-                    border-radius: 0.5rem;
+                .checkbox-group label a {
+                    color: #1e40af;
+                    text-decoration: underline;
                 }
 
-                .contact-channel-container > label {
-                    display: block;
-                    margin-bottom: 0.75rem;
+                .optin-container {
+                    margin-bottom: 1.5rem;
+                }
+
+                .optin-title {
                     font-weight: 600;
-                    color: var(--primary-blue);
+                    color: #1e40af;
+                    margin-bottom: 0.75rem;
+                    font-size: 1rem;
+                }
+
+                .optin-options {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.75rem;
+                }
+
+                .optin-option {
+                    display: flex;
+                    align-items: center;
+                    padding: 0.75rem;
+                    background: rgba(255, 255, 255, 0.7);
+                    border-radius: 0.5rem;
+                    border: 2px solid #e5e7eb;
+                    cursor: pointer;
+                    transition: all 0.3s;
+                }
+
+                .optin-option:hover {
+                    border-color: #1e40af;
+                }
+
+                .optin-option.selected {
+                    background: rgba(30, 64, 175, 0.1);
+                    border-color: #1e40af;
+                }
+
+                .optin-option input[type="radio"] {
+                    margin-right: 0.75rem;
+                }
+
+                .optin-option label {
+                    cursor: pointer;
+                    flex-grow: 1;
                 }
 
                 .channel-options {
                     display: flex;
                     flex-wrap: wrap;
-                    gap: 1rem;
+                    gap: 0.75rem;
+                    margin-top: 0.75rem;
                 }
 
-                .channel-options input[type="radio"] {
-                    display: none;
-                }
-
-                .radio-label {
-                    display: inline-block;
-                    padding: 0.5rem 1rem;
-                    background-color: var(--white);
+                .channel-option {
+                    flex: 1;
+                    min-width: 100px;
+                    padding: 0.5rem;
+                    background: rgba(255, 255, 255, 0.7);
                     border: 2px solid #e5e7eb;
-                    border-radius: 2rem;
+                    border-radius: 0.5rem;
+                    text-align: center;
                     cursor: pointer;
                     transition: all 0.3s;
                 }
 
-                .channel-options input[type="radio"]:checked + .radio-label {
-                    background-color: var(--primary-blue);
-                    color: var(--white);
-                    border-color: var(--primary-blue);
+                .channel-option:hover {
+                    border-color: #1e40af;
+                }
+
+                .channel-option.selected {
+                    background: rgba(30, 64, 175, 0.1);
+                    border-color: #1e40af;
                 }
 
                 .submit-button {
                     display: block;
                     width: 100%;
                     padding: 1rem;
-                    margin-top: 1.5rem;
-                    background: linear-gradient(to bottom right, var(--accent-red), var(--accent-red-dark));
-                    color: var(--white);
+                    margin-top: auto;
+                    background: linear-gradient(to bottom right, #dc2626, #b91c1c);
+                    color: white;
                     border: none;
                     border-radius: 0.5rem;
                     font-size: 1.1rem;
@@ -375,7 +385,7 @@ export default function FormApp() {
                 }
 
                 .modal-card {
-                    background-color: var(--white);
+                    background-color: white;
                     padding: 2rem;
                     border-radius: 0.5rem;
                     max-width: 90%;
@@ -397,16 +407,25 @@ export default function FormApp() {
                     padding: 1rem;
                     text-align: center;
                     font-size: 1.1rem;
-                    color: var(--accent-red);
+                    color: #dc2626;
                 }
 
-                @media (min-width: 640px) {
+                @media (min-width: 768px) {
                     .form-container {
+                        padding: 2rem;
+                        justify-content: center;
+                        align-items: center;
+                    }
+
+                    .form-content {
+                        width: 100%;
                         max-width: 600px;
-                        margin: 2rem auto;
-                        min-height: calc(100vh - 4rem);
+                        height: auto;
+                        max-height: 90vh;
                         border-radius: 1.5rem;
                         box-shadow: 0 25px 50px -12px rgba(30, 64, 175, 0.25);
+                        background: white;
+                        overflow-y: auto;
                     }
 
                     .form-card {
@@ -426,16 +445,13 @@ export default function FormApp() {
                 <div className="floating-element floating-element-1"></div>
                 <div className="floating-element floating-element-2"></div>
                 <div className="floating-element floating-element-3"></div>
-                <div className="sparkle sparkle-1"></div>
-                <div className="sparkle sparkle-2"></div>
-                <div className="sparkle sparkle-3"></div>
                 
                 {/* Bandeau d'anniversaire pour les 70 ans */}
                 <div className="anniversary-banner">
                     🎉 70 ans d'excellence Brico Ceram 🎉
                 </div>
 
-                <form onSubmit={handleSubmit} className="form-card">
+                <div className="form-content">
                     {/* Header stylisé pour donner un contexte */}
                     <div className="form-header">
                         <TrophyIcon className="header-icon" />
@@ -443,58 +459,190 @@ export default function FormApp() {
                         <p className="dept-info">Département: {dept} ({slug})</p>
                     </div>
 
-                    <div className="input-group">
-                        <label className="postit-label">Nom & Prénom</label>
-                        <input name="name" type="text" value={form.name} onChange={handleChange} required disabled={loading} placeholder="Entrez votre nom complet" />
+                    {/* CONSIGNE */}
+                    <div className="instruction">
+                        Remplis le formulaire suivant pour valider ta participation
                     </div>
 
-                    <div className="input-group">
-                        <label className="postit-label">Email</label>
-                        <input name="email" type="email" value={form.email} onChange={handleChange} required disabled={loading} placeholder="email@exemple.com" />
-                    </div>
-
-                    <div className="input-group">
-                        <label className="postit-label">Téléphone</label>
-                        <input name="tel" type="tel" value={form.tel} onChange={handleChange} required disabled={loading} placeholder="06 90 XX XX XX" />
-                    </div>
-
-                    <div className="input-group">
-                        <label className="postit-label">Date de Naissance</label>
-                        <input name="birthdate" type="date" value={form.birthdate} onChange={handleChange} required disabled={loading} />
-                    </div>
-
-                    <h3>Vos préférences de contact</h3>
-
-                    <div className="checkbox-group">
-                        <input type="checkbox" name="brandOptin" id="brandOptin" checked={form.brandOptin === 'yes'} onChange={handleChange} disabled={loading} />
-                        <label htmlFor="brandOptin">Oui, j'accepte de recevoir des offres de {slug}.</label>
-                    </div>
-
-                    {formCanalContacte && (
-                        <div className="contact-channel-container">
-                            <label>Choisissez un canal de contact</label>
-                            <div className="channel-options">
-                                <input type="radio" id="email" name="contactChannel" value="email" checked={form.contactChannel==='email'} onChange={handleChange} disabled={loading} />
-                                <label htmlFor="email" className="radio-label">Email</label>
-
-                                <input type="radio" id="sms" name="contactChannel" value="sms" checked={form.contactChannel==='sms'} onChange={handleChange} disabled={loading} />
-                                <label htmlFor="sms" className="radio-label">SMS</label>
-
-                                <input type="radio" id="both" name="contactChannel" value="both" checked={form.contactChannel==='both'} onChange={handleChange} disabled={loading} />
-                                <label htmlFor="both" className="radio-label">Email & SMS</label>
-                            </div>
+                    <form onSubmit={handleSubmit} className="form-card">
+                        {/* CHAMPS DU FORMULAIRE */}
+                        <div className="input-group">
+                            <label className="input-label">Prénom :</label>
+                            <input 
+                                name="firstName" 
+                                type="text" 
+                                value={form.firstName} 
+                                onChange={handleChange} 
+                                required 
+                                disabled={loading} 
+                                placeholder="Entrez votre prénom" 
+                            />
                         </div>
-                    )}
 
-                    <div className="checkbox-group">
-                        <input type="checkbox" name="partnerOptin" id="partnerOptin" checked={form.partnerOptin} onChange={handleChange} disabled={loading} />
-                        <label htmlFor="partnerOptin">Oui, j'accepte de recevoir des offres des partenaires.</label>
-                    </div>
+                        <div className="input-group">
+                            <label className="input-label">Nom :</label>
+                            <input 
+                                name="lastName" 
+                                type="text" 
+                                value={form.lastName} 
+                                onChange={handleChange} 
+                                required 
+                                disabled={loading} 
+                                placeholder="Entrez votre nom" 
+                            />
+                        </div>
 
-                    <button type="submit" disabled={loading} className="submit-button">
-                        {loading ? 'Enregistrement...' : 'Commencer le jeu'}
-                    </button>
-                </form>
+                        <div className="input-group">
+                            <label className="input-label">Mail :</label>
+                            <input 
+                                name="email" 
+                                type="email" 
+                                value={form.email} 
+                                onChange={handleChange} 
+                                required 
+                                disabled={loading} 
+                                placeholder="email@exemple.com" 
+                            />
+                        </div>
+
+                        <div className="input-group">
+                            <label className="input-label">Tél. :</label>
+                            <input 
+                                name="tel" 
+                                type="tel" 
+                                value={form.tel} 
+                                onChange={handleChange} 
+                                required 
+                                disabled={loading} 
+                                placeholder="06 90 XX XX XX" 
+                            />
+                        </div>
+
+                        <div className="input-group">
+                            <label className="input-label">Code Postal :</label>
+                            <input 
+                                name="postalCode" 
+                                type="text" 
+                                value={form.postalCode} 
+                                onChange={handleChange} 
+                                required 
+                                disabled={loading} 
+                                placeholder="Entrez votre code postal" 
+                            />
+                        </div>
+
+                        {/* Conditions d'utilisation */}
+                        <div className="checkbox-group">
+                            <input 
+                                type="checkbox" 
+                                name="termsAccepted" 
+                                id="termsAccepted" 
+                                checked={form.termsAccepted} 
+                                onChange={handleChange} 
+                                disabled={loading} 
+                            />
+                            <label htmlFor="termsAccepted">
+                                J'accepte le <a href="#" onClick={(e) => { e.preventDefault(); setModalMessage("Le règlement du jeu sera bientôt disponible."); }}>règlement du jeu</a> et confirme avoir plus de 18 ans
+                            </label>
+                        </div>
+
+                        {/* Optin pour les offres commerciales */}
+                        <div className="optin-container">
+                            <div className="optin-title">J'accepte de recevoir les offres commerciales de la part de BRICOCERAM</div>
+                            
+                            <div className="optin-options">
+                                <div 
+                                    className={`optin-option ${form.brandOptin === 'no' ? 'selected' : ''}`}
+                                    onClick={() => setForm(prev => ({ ...prev, brandOptin: 'no', contactChannel: null }))}
+                                >
+                                    <input 
+                                        type="radio" 
+                                        name="brandOptin" 
+                                        id="optinNo" 
+                                        value="no" 
+                                        checked={form.brandOptin === 'no'} 
+                                        onChange={handleChange} 
+                                        disabled={loading} 
+                                    />
+                                    <label htmlFor="optinNo">Non</label>
+                                </div>
+                                
+                                <div 
+                                    className={`optin-option ${form.brandOptin === 'yes' ? 'selected' : ''}`}
+                                    onClick={() => setForm(prev => ({ ...prev, brandOptin: 'yes' }))}
+                                >
+                                    <input 
+                                        type="radio" 
+                                        name="brandOptin" 
+                                        id="optinYes" 
+                                        value="yes" 
+                                        checked={form.brandOptin === 'yes'} 
+                                        onChange={handleChange} 
+                                        disabled={loading} 
+                                    />
+                                    <label htmlFor="optinYes">Oui</label>
+                                </div>
+                            </div>
+
+                            {formCanalContacte && (
+                                <div className="channel-options">
+                                    <div 
+                                        className={`channel-option ${form.contactChannel === 'email' ? 'selected' : ''}`}
+                                        onClick={() => setForm(prev => ({ ...prev, contactChannel: 'email' }))}
+                                    >
+                                        <input 
+                                            type="radio" 
+                                            name="contactChannel" 
+                                            id="email" 
+                                            value="email" 
+                                            checked={form.contactChannel === 'email'} 
+                                            onChange={handleChange} 
+                                            disabled={loading} 
+                                        />
+                                        <label htmlFor="email">Email</label>
+                                    </div>
+
+                                    <div 
+                                        className={`channel-option ${form.contactChannel === 'sms' ? 'selected' : ''}`}
+                                        onClick={() => setForm(prev => ({ ...prev, contactChannel: 'sms' }))}
+                                    >
+                                        <input 
+                                            type="radio" 
+                                            name="contactChannel" 
+                                            id="sms" 
+                                            value="sms" 
+                                            checked={form.contactChannel === 'sms'} 
+                                            onChange={handleChange} 
+                                            disabled={loading} 
+                                        />
+                                        <label htmlFor="sms">SMS</label>
+                                    </div>
+
+                                    <div 
+                                        className={`channel-option ${form.contactChannel === 'both' ? 'selected' : ''}`}
+                                        onClick={() => setForm(prev => ({ ...prev, contactChannel: 'both' }))}
+                                    >
+                                        <input 
+                                            type="radio" 
+                                            name="contactChannel" 
+                                            id="both" 
+                                            value="both" 
+                                            checked={form.contactChannel === 'both'} 
+                                            onChange={handleChange} 
+                                            disabled={loading} 
+                                        />
+                                        <label htmlFor="both">Email & SMS</label>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* BOUTON VALIDER */}
+                        <button type="submit" disabled={loading} className="submit-button">
+                            {loading ? 'Enregistrement...' : 'Valider'}
+                        </button>
+                    </form>
+                </div>
             </div>
         </>
     );
