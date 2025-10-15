@@ -67,7 +67,7 @@ export default function GameCanvas({ player, savePlayer, dept, slug }) {
 
     savePlayer({ played: true });
 
-    const urlPrefix = `/${dept}/${slug}/anniversaire`;
+    const urlPrefix = `/${dept}/anniversaire/${slug}`;
 
     if (finalRecall >= SUCCESS_THRESHOLD) {
       navigate(`${urlPrefix}/win`, { state: { score } });
