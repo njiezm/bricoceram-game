@@ -17,7 +17,6 @@ const defaultConfig = {
         optinText: "J'accepte de recevoir les offres commerciales de la part de BRICOCERAM",
     },
     api: {
-        // L'endpoint n'est pas utilisé pour la simulation, mais il est bon de le garder
         endpoint: 'https://api.bricoceram.com/participants/register', 
     },
     legal: {
@@ -71,6 +70,8 @@ export default function GlobalForm({ config: userConfig = {} }) {
         optin: "", 
         bycanal: "",
         reglement: false,
+        dept: dept || "",
+        slug: slug || ""
     });
 
     const [showCanal, setShowCanal] = useState(false);
@@ -108,15 +109,36 @@ export default function GlobalForm({ config: userConfig = {} }) {
 
         setLoading(true);
         try {
-            // Simulation d'un appel API avec un délai
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            // Préparation des données à envoyer à l'API
+            const apiData = {
+                ...form,
+                // S'assurer que dept et slug sont bien inclus
+                dept: dept,
+                slug: slug
+            };
             
-            // Génération d'un ID de participant fictif
-            const participantId = 'P_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            // Appel API réel avec fetch
+            const response = await fetch(config.api.endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(apiData)
+            });
+            
+            if (!response.ok) {
+                throw new Error('Erreur lors de l\'envoi des données');
+            }
+            
+            const data = await response.json();
+            
+            // Utilisation de l'ID retourné par l'API ou génération d'un ID si non fourni
+            const participantId = data.participantId || 'P_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
             
             // Redirection vers la page de jeu avec l'ID généré
             navigate(`/${dept}/${slug}${config.navigation.successRoute}/${participantId}_${slug}`);
         } catch (error) {
+            console.error('Erreur API:', error);
             setModalMessage("Une erreur est survenue lors de l'inscription.");
         } finally {
             setLoading(false);
