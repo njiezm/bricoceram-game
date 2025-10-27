@@ -97,6 +97,9 @@ export default function GameCanvas({ player, savePlayer, dept, slug, config: use
   const navigate = useNavigate();
   const location = useLocation();
   
+  // --- MODIFIÉ : Récupération robuste du url_slug ---
+  // On tente de le récupérer depuis l'état de navigation (arrivée normale)
+  // S'il n'est pas là (rafraîchissement de la page), on le prend depuis le localStorage.
   const urlSlug = location.state?.urlSlug || localStorage.getItem("url_slug");
 
   const config = useMemo(() => ({
@@ -127,6 +130,7 @@ export default function GameCanvas({ player, savePlayer, dept, slug, config: use
   const tracedLengthRef = useRef(0);
   const userPathRef = useRef(null);
   
+  // --- NOUVEAU : Refs pour le calcul basé sur la longueur ---
   const coveredSegmentsRef = useRef(new Set());
   const guideSegmentLengthsRef = useRef([]);
 
@@ -134,6 +138,7 @@ export default function GameCanvas({ player, savePlayer, dept, slug, config: use
   const t0Ref = useRef(null);
   const isGameEndingRef = useRef(false);
 
+  // Fonctions pour sélectionner les images en fonction du département
   const getHeaderImage = useCallback(() => {
     const deptCode = player.dept || '';
     if (deptCode === '971') return config.branding.headerImage971;
@@ -187,7 +192,7 @@ export default function GameCanvas({ player, savePlayer, dept, slug, config: use
       this.rotation = Math.random() * Math.PI * 2; this.rotationSpeed = (Math.random() - 0.5) * 0.3;
     }
     update() { this.x += this.speedX; this.y += this.speedY; this.speedY += this.gravity; this.opacity -= 0.008; this.rotation += this.rotationSpeed; return this.opacity > 0; }
-    draw(ctx) { ctx.save(); ctx.globalAlpha = this.opacity; ctx.translate(this.x, y); ctx.rotate(this.rotation); ctx.fillStyle = this.color; ctx.fillRect(-this.size, -this.size/2, this.size * 2, this.size); ctx.restore(); }
+    draw(ctx) { ctx.save(); ctx.globalAlpha = this.opacity; ctx.translate(this.x, this.y); ctx.rotate(this.rotation); ctx.fillStyle = this.color; ctx.fillRect(-this.size, -this.size/2, this.size * 2, this.size); ctx.restore(); }
   }
 
   const animateParticles = useCallback(() => {
@@ -269,9 +274,11 @@ export default function GameCanvas({ player, savePlayer, dept, slug, config: use
     setRunning(false);
     savePlayer({ played: true });
 
+    // --- AJOUTÉ : Vérification de sécurité pour le url_slug ---
     if (!urlSlug) {
         console.error("Erreur critique : le url_slug du participant est manquant. Impossible d'envoyer le résultat.");
-        navigate('/bricoceram/anniversaire70ans/erreur');
+        // Redirigez vers une page d'erreur ou la page d'accueil pour éviter un blocage
+        navigate('/bricoceram/anniversaire70ans/erreur'); // Assurez-vous que cette route existe
         console.groupEnd();
         return;
     }
@@ -280,6 +287,7 @@ export default function GameCanvas({ player, savePlayer, dept, slug, config: use
     try { await fetch(`${API_BASE}/api/save/result-skillgames`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); } catch (err) { console.error('Erreur API:', err); }
     if (hasWon) { navigate('/bricoceram/anniversaire70ans/game/win', { state: { score } }); } else { navigate('/bricoceram/anniversaire70ans/game/lose', { state: { score } }); }
     console.groupEnd();
+  // --- MODIFIÉ : Ajout de urlSlug aux dépendances du useCallback ---
   }, [navigate, savePlayer, config.game.successThreshold, urlSlug, coverage]); 
 
   const startGame = useCallback(() => {
@@ -424,8 +432,7 @@ export default function GameCanvas({ player, savePlayer, dept, slug, config: use
       const canvasAspectRatio = state.width / state.height;
       let scaleFactor;
       if (svgAspectRatio > canvasAspectRatio) { scaleFactor = state.width / SVG_WIDTH; } else { scaleFactor = state.height / SVG_HEIGHT; }
-      // --- MODIFICATION : Agrandissement de l'élément pour un meilleur centrage visuel ---
-      scaleFactor *= 0.95; // Augmenté de 0.9 à 0.95
+      scaleFactor *= 0.9;
       const translateX = (state.width - SVG_WIDTH * scaleFactor) / 2;
       const translateY = (state.height - SVG_HEIGHT * scaleFactor) / 2;
 
@@ -581,26 +588,8 @@ export default function GameCanvas({ player, savePlayer, dept, slug, config: use
     .instructions { padding: 0.75rem 1rem; background: rgba(245, 245, 220, 0.9); border-radius: 15px; font-size: 1rem; text-align: center; color: ${config.theme.darkWood}; margin-bottom: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
     .error-message { padding: 1rem; background: rgba(139, 69, 19, 0.9); border-radius: 15px; font-size: 1rem; text-align: center; color: ${config.theme.white}; margin-bottom: 1rem; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
     .video-container { width: 100%; max-width: 400px; margin: 0 auto 1rem; border-radius: 15px; overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.2); } .video-container video { width: 100%; height: auto; display: block; }
-    /* --- MODIFICATION : Le style de .canvas-container est fusionné dans .canvas-wrapper --- */
-    .canvas-wrapper { 
-        position: relative; 
-        width: 100%; 
-        max-width: 500px; 
-        aspect-ratio: 1 / 1; 
-        border: 4px solid ${config.theme.primaryColor}; 
-        border-radius: 15px; 
-        overflow: hidden; 
-        touch-action: none; 
-        background: #fdf6e3; 
-        box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.3), inset 0 0 10px rgba(0,0,0,0.1); 
-        /* Styles de .canvas-container ajoutés ici */
-        flex-grow: 1; 
-        display: flex; 
-        justify-content: center; 
-        align-items: center; 
-        margin: 1rem auto; /* Marge pour l'espacement */
-        ${!shapeError ? '' : 'display: none;'} 
-    }
+    .canvas-container { flex-grow: 1; display: flex; justify-content: center; align-items: center; position: relative; min-height: 300px; }
+    .canvas-wrapper { position: relative; width: 100%; max-width: 500px; aspect-ratio: 1 / 1; border: 4px solid ${config.theme.primaryColor}; border-radius: 15px; overflow: hidden; touch-action: none; background: #fdf6e3; box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.3), inset 0 0 10px rgba(0,0,0,0.1); ${!shapeError ? '' : 'display: none;'} }
     .canvas-wrapper.sawing { animation: pulse 0.5s infinite; } @keyframes pulse { 0% { box-shadow: 0 0 15px rgba(255, 165, 0, 0.7), 0 10px 20px -5px rgba(0, 0, 0, 0.3), inset 0 0 10px rgba(0,0,0,0.1); } 50% { box-shadow: 0 0 25px rgba(255, 165, 0, 1), 0 10px 20px -5px rgba(0, 0, 0, 0.3), inset 0 0 10px rgba(0,0,0,0.1); } 100% { box-shadow: 0 0 15px rgba(255, 165, 0, 0.7), 0 10px 20px -5px rgba(0, 0, 0, 0.3), inset 0 0 10px rgba(0,0,0,0.1); } }
     .canvas-wrapper canvas { position: absolute; inset: 0; touch-action: none; }
     .button-container { padding: 1rem 0; display: flex; justify-content: center; }
@@ -636,17 +625,13 @@ export default function GameCanvas({ player, savePlayer, dept, slug, config: use
           ) : (
           <div style={{backgroundImage: "url('./images/Fdplancheenbois.png')", padding: "15px", borderRadius: "10px"}}>
             <img src={getAccrocheImage2()} alt="Accroche" style={{ width: "100%", height: "auto", display: "block", objectFit: "contain" }}/>
-            <br></br>
+           <br></br>
             <div className="stats-container">
+  
               <div className="stat-item"><div className="stat-label">⏱️ Temps</div><div className="stat-value" style={{ color: timeLeft <= 10 && running ? config.theme.accentColor : config.theme.darkWood }}>{timeLeft}s</div></div>
               <div className="stat-item"><div className="stat-label">🪚 Précision</div><div className="stat-value" style={{ color: coverage >= config.game.successThreshold * 100 ? config.theme.primaryColor : config.theme.accentColor }}>{coverage}%</div></div>
             </div>
-            {/* --- MODIFICATION : Le div.canvas-container est retiré. Le canvas-wrapper est maintenant directement ici. --- */}
-            <div className={`canvas-wrapper ${isSawing ? 'sawing' : ''}`}>
-              <canvas ref={guideRef} />
-              <canvas ref={drawRef} />
-              <canvas ref={particleCanvasRef} style={{ pointerEvents: 'none' }} />
-            </div>
+            <div className="canvas-container"><div className={`canvas-wrapper ${isSawing ? 'sawing' : ''}`}><canvas ref={guideRef} /><canvas ref={drawRef} /><canvas ref={particleCanvasRef} style={{ pointerEvents: 'none' }} /></div></div>
             <div className="button-container"><button className="start-button" onClick={startGame} disabled={running || !!shapeError}>{running ? `Tracé en cours (${timeLeft}s)` : (shapeError ? 'Départ non supporté' : '🪚 Lancer le Défi !')}</button></div>
           </div>
           )}
