@@ -1,19 +1,16 @@
-import React, { useMemo } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { usePlayer } from '../App'; // Import du contexte du joueur
 
-// Configuration par défaut pour la page d'attente
+// On réutilise la même configuration par défaut pour la cohérence visuelle
 const defaultConfig = {
     branding: {
         headerImage: "./images/header.png",
-        headerImage971: "./images/header_971.png",
-        headerImage972: "./images/header_972.png",
-        headerImage973: "./images/header_973.png",
-        accrocheImage: "./images/TEXTPATIENCEMQ.png",
-        accrocheImage971: "./images/TEXTPATIENCE971.png",
-        accrocheImage972: "./images/TEXTPATIENCEMQ.png",
-        accrocheImage973: "./images/TEXTPATIENCE973.png",
+        headerImage971: "./images/headergpe.png",
+        headerImage972: "./images/header.png",
+        headerImage973: "./images/headerguy.png",
         footerImage: "./images/Footer_brico.png",
-        backgroundImage: "",
+        backgroundImage: "./images/Background_brico.png",
     },
     theme: {
         primaryColor: '#1e40af',
@@ -21,12 +18,14 @@ const defaultConfig = {
         accentColorDark: '#b91c1c',
         goldColor: '#fbbf24',
         white: '#ffffff',
+        labelBgColor: '#1e40af',
+        fontFamily: 'Arial, sans-serif',
     }
 };
 
-export default function WaitPage({ config: userConfig = {} }) {
+export default function DejaGagnePage({ config: userConfig = {} }) {
     const navigate = useNavigate();
-    const { dept, slug } = useParams();
+    const { player } = usePlayer(); // Récupération du joueur pour le retour
 
     // Fusionner la configuration par défaut avec celle de l'utilisateur
     const config = useMemo(() => ({
@@ -35,29 +34,18 @@ export default function WaitPage({ config: userConfig = {} }) {
         theme: { ...defaultConfig.theme, ...userConfig.theme }
     }), [userConfig]);
     
-    // Sélectionner l'image d'accroche en fonction du département
-    const getAccrocheImage = useMemo(() => {
-        if (dept === '971') return config.branding.accrocheImage971;
-        if (dept === '972') return config.branding.accrocheImage972;
-        if (dept === '973') return config.branding.accrocheImage973;
-        return config.branding.accrocheImage; // Image par défaut
-    }, [config.branding, dept]);
-    
     // Sélectionner le header en fonction du département
     const getHeaderImage = useMemo(() => {
-        if (dept === '971') return config.branding.headerImage971;
-        if (dept === '972') return config.branding.headerImage972;
-        if (dept === '973') return config.branding.headerImage973;
+        if (player.dept === '971') return config.branding.headerImage971;
+        if (player.dept === '972') return config.branding.headerImage972;
+        if (player.dept === '973') return config.branding.headerImage973;
         return config.branding.headerImage; // Header par défaut
-    }, [config.branding, dept]);
-    
-    // Sélectionner le message d'attente en fonction du département
-    const getWaitMessage = useMemo(() => {
-        if (dept === '971') return "Revenez à partir du [Date de début] pour participer et tenter de gagner l'une des nombreuses mises à jeu en Guadeloupe.";
-        if (dept === '972') return "Revenez à partir du [Date de début] pour participer et tenter de gagner l'une des nombreuses mises à jeu en Martinique.";
-        if (dept === '973') return "Revenez à partir du [Date de début] pour participer et tenter de gagner l'une des nombreuses mises à jeu en Guyane.";
-        return "Revenez à partir du [Date de début] pour participer et tenter de gagner l'une des nombreuses mises à jeu.";
-    }, [dept]);
+    }, [config.branding, player.dept]);
+
+    const handleReturn = () => {
+        // On redirige l'utilisateur vers la page de choix de son département
+        navigate(`/bricoceram/anniversaire70ans/bricoceram/${player.dept}`);
+    };
 
     // Styles CSS identiques aux autres pages pour la cohérence
     const cssStyles = useMemo(() => `
@@ -71,7 +59,7 @@ export default function WaitPage({ config: userConfig = {} }) {
             display: flex;
             justify-content: center;
             align-items: flex-start;
-            
+            background-color: #fff;
             min-height: 100vh;
         }
         
@@ -79,18 +67,17 @@ export default function WaitPage({ config: userConfig = {} }) {
             display: flex;
             flex-direction: column;
             justify-content: flex-start;
-            background-color: #FFD100;
             background-repeat: no-repeat;
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
+            background-color: #FFD100;
             width: 92vw;
             max-width: 480px;
             min-height: 100vh;
             position: relative;
         }
         
-        /* Modification pour que le header et le contenu principal occupent toute la largeur sur mobile */
         @media (max-width: 768px) {
             .punch-container {
                 width: 100vw;
@@ -105,7 +92,7 @@ export default function WaitPage({ config: userConfig = {} }) {
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: #FFD100;
+            background-image: url(${config.branding.backgroundImage});
             background-repeat: no-repeat;
             background-size: cover;
             background-position: center;
@@ -126,43 +113,48 @@ export default function WaitPage({ config: userConfig = {} }) {
             justify-content: center;
         }
         
-        .wait-card {
-            background-color: 'white';
-            border-radius: '20px';
-            padding: '30px 20px';
-            width: '100%';
-            boxShadow: '0 8px 16px rgba(0, 0, 0, 0.1)';
-            border: '2px solid ${config.theme.primaryColor}';
+        .info-card {
+            background-color: white;
+            border-radius: 20px;
+            padding: 40px 20px;
+            width: 100%;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            border: 2px solid ${config.theme.primaryColor};
+            margin-bottom: 20px;
+            text-align: center;
         }
         
-        .wait-title {
-            font-size: '2rem';
-            margin: '0 0 10px 0';
+        .info-title {
+            font-size: 2rem;
+            margin: 0 0 15px 0;
             color: ${config.theme.primaryColor};
         }
         
-        .wait-message {
-            font-size: '1.1rem';
+        .info-subtitle {
+            font-size: 1.1rem;
             color: ${config.theme.primaryColor};
-            lineHeight: '1.5';
+            line-height: 1.5;
+            margin-bottom: 25px;
         }
-        
-        /* Style pour l'image d'accroche collée au bord du bloc blanc */
-        .accroche-container {
-            width: 100%;
-            padding: 0;
-            margin: 0;
-            overflow: hidden;
+
+        .return-button {
+            display: inline-block;
+            padding: 12px 30px;
+            background-color: ${config.theme.accentColor};
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            border: none;
+            transition: background-color 0.2s;
         }
-        
-        .accroche-image {
-            width: 100%;
-            height: auto;
-            display: block;
-            margin: 0;
-            padding: 0;
+
+        .return-button:hover {
+            background-color: ${config.theme.accentColorDark};
         }
-    `, [config, dept]);
+    `, [config, player.dept]);
 
     return (
         <div className="punch-wrapper">
@@ -171,7 +163,6 @@ export default function WaitPage({ config: userConfig = {} }) {
             <div className="punch-container">
                 {/* HEADER */}
                 <div style={{ width: "100%", flexShrink: 0 }}>
-                    
                     <img
                         src={getHeaderImage}
                         alt="Header"
@@ -185,16 +176,16 @@ export default function WaitPage({ config: userConfig = {} }) {
                 </div>
 
                 {/* CONTENU CENTRAL */}
+              <div style={{backgroundColor: "white", padding: "0", borderRadius: "10px", margin: "20px", overflow: "hidden"}}>
                     <div className="accroche-container">
-                                         <div style={{backgroundColor: "white", padding: "15px", borderRadius: "10px", margin: "20px", overflow: "hidden"}}>
-
-                        <img
-                            src={getAccrocheImage}
-                            alt="En Attente"
-                            className="accroche-image"
-                        />
+                        <h1 className="info-title">Vous avez déjà gagné ! 🎉</h1>
+                        <p className="info-subtitle">
+                            Félicitations ! Vous avez déjà remporté un lot lors d'une précédente participation. Chaque participant ne peut gagner qu'une seule fois.
+                        </p>
+                        <button onClick={handleReturn} className="return-button">
+                            Retour à l'accueil
+                        </button>
                     </div>
-         
                 </div>
 
                 {/* FOOTER */}

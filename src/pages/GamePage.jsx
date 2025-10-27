@@ -1,11 +1,12 @@
 import GameCanvas from '../components/GameCanvas';
-import { useParams } from 'react-router-dom';
+import { usePlayer } from '../App'; // Import du contexte
 
-export default function GamePage({ player, savePlayer }) {
-  // Récupère les paramètres de l'URL pour la redirection finale
-  const { dept, slug } = useParams();
+export default function GamePage() {
+  const { player, savePlayer } = usePlayer(); // Utilisation du contexte
 
-  // On passe les informations de routing nécessaires à GameCanvas
-  // Les paramètres dept et slug sont essentiels pour la redirection vers /win ou /lose
-  return <GameCanvas player={player} savePlayer={savePlayer} dept={dept} slug={slug} />;
+  // Récupération du dept et slug depuis le contexte player ou localStorage
+  const dept = player.dept || localStorage.getItem("dept");
+  const slug = player.slug || localStorage.getItem("slug") || "bricoceram"; // valeur par défaut si besoin
+
+  return <GameCanvas player={player} savePlayer={savePlayer} dept={dept} slug={slug} />;
 }

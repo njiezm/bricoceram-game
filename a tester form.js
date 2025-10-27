@@ -17,7 +17,7 @@ const defaultConfig = {
         accrocheImage973: "../images/accroche_jeu_guy.png",
         dotationImage: "https://placehold.co/400x150/fbbf24/1e40af?text=15+000%E2%82%AC+%C3%A0+gagner",
         formTextImage: "../images/form.png",
-        footerImage: "../images/Footer_brico.png",
+        footerImage: "https://placehold.co/480x100/fbbf24/1e40af?text=Footer+Brico+Ceram",
         btnValidImage: "../images/BtnValider.png",
         backgroundImage: "https://placehold.co/480x800/f0f9ff/1e40af?text=Background+Brico",
         optinText: "J'accepte de recevoir les offres commerciales de la part de BRICOCERAM",
@@ -86,7 +86,7 @@ export default function GlobalForm({ config: userConfig = {} }) {
         email: "",
         phone: "",
         zipcode: "",
-        toyoubuild: "", // Ajout du champ toyoubuild
+        toyoubuild: "", // Le champ pour la question ajoutée
         optin: "",
         bycanal: "",
         reglement: false
@@ -103,64 +103,83 @@ export default function GlobalForm({ config: userConfig = {} }) {
     };
 
     const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (loading) return;
+        e.preventDefault();
+        if (loading) return;
 
-    if (!form.lastname || !form.firstname || !form.email || !form.phone || !form.zipcode || !form.toyoubuild) {
-        setModalMessage("Veuillez remplir tous les champs obligatoires.");
-        return;
-    }
-    if (!form.reglement) {
-        setModalMessage("Veuillez accepter le règlement du jeu et confirmer avoir plus de 18 ans.");
-        return;
-    }
-    if (form.optin === "1" && !form.bycanal) {
-        setModalMessage("Veuillez choisir un canal de communication.");
-        return;
-    }
+        // Validation
+        if (!form.lastname || !form.firstname || !form.email || !form.phone || !form.zipcode || !form.toyoubuild) {
+            setModalMessage("Veuillez remplir tous les champs obligatoires.");
+            return;
+        }
+        if (!form.reglement) {
+            setModalMessage("Veuillez accepter le règlement du jeu et confirmer avoir plus de 18 ans.");
+            return;
+        }
+        if (form.optin === "1" && !form.bycanal) {
+            setModalMessage("Veuillez choisir un canal de communication.");
+            return;
+        }
 
-    setLoading(true);
-    try {
-        const formdata = new FormData();
-        formdata.append("key_api", config.api.key_api);
-        formdata.append("firstname", form.firstname);
-        formdata.append("lastname", form.lastname);
-        formdata.append("email", form.email);
-        formdata.append("zipcode", form.zipcode);
-        formdata.append("phone", form.phone);
-        formdata.append("toyoubuild", form.toyoubuild); // Ajout du champ toyoubuild
-        formdata.append("source", source || "direct");
-        formdata.append("dep_slug", dept);
-        formdata.append("optin", form.optin);
-        formdata.append("bycanal", form.bycanal);
+        setLoading(true);
+        try {
+            const formdata = new FormData();
+            formdata.append("key_api", config.api.key_api);
+            formdata.append("firstname", form.firstname);
+            formdata.append("lastname", form.lastname);
+            formdata.append("email", form.email);
+            formdata.append("zipcode", form.zipcode);
+            formdata.append("phone", form.phone);
+            formdata.append("toyoubuild", form.toyoubuild);
+            formdata.append("source", source || "direct");
+            formdata.append("dep_slug", dept);
+            formdata.append("optin", form.optin);
+            formdata.append("bycanal", form.bycanal);
 
-        const myHeaders = new Headers();
-        myHeaders.append("Accept", "application/json");
+            const myHeaders = new Headers();
+            myHeaders.append("Accept", "application/json");
 
-        const requestOptions = {
-            method: "POST",
-            headers: myHeaders,
-            body: formdata,
-            redirect: "follow"
-        };
+            const requestOptions = {
+                method: "POST",
+                headers: myHeaders,
+                body: formdata,
+                redirect: "follow"
+            };
 
-        const response = await fetch(config.api.endpoint, requestOptions);
+            // --- DÉBUT DES LOGS DE DÉBOGAGE ---
+            console.log("Envoi des données à l'API...");
+            const response = await fetch(config.api.endpoint, requestOptions);
+            console.log("Réponse brute de l'API reçue :", response);
 
-        if (!response.ok) throw new Error('Erreur API');
+            if (!response.ok) {
+                console.error("La réponse de l'API n'est pas 'ok'. Statut :", response.status);
+                throw new Error(`Erreur API: ${response.status}`);
+            }
 
-        const data = await response.json();
-        // --- CE BLOC EST DÉJÀ CORRECT ---
-        const urlSlug = data.url_slug || slug;
-        localStorage.setItem("url_slug", urlSlug);
-        navigate(config.navigation.successRoute, { state: { urlSlug } });
+            const data = await response.json();
+            console.log("Données JSON parsées depuis l'API :", data);
+            // --- FIN DES LOGS DE DÉBOGAGE ---
 
-    } catch (err) {
-        console.error(err);
-        setModalMessage("Une erreur est survenue lors de l'inscription.");
-    } finally {
-        setLoading(false);
-    }
-};
+            // On s'assure que `url_slug` est bien présent
+            if (!data.url_slug) {
+                console.error("ERREUR : La réponse de l'API ne contient pas de 'url_slug'.");
+                throw new Error("Le serveur n'a pas renvoyé d'identifiant de jeu.");
+            }
+
+            const urlSlug = data.url_slug;
+            console.log("URL Slug final qui sera utilisé :", urlSlug);
+
+            localStorage.setItem("url_slug", urlSlug);
+            console.log(`Slug sauvegardé dans localStorage. Navigation vers : ${config.navigation.successRoute}`);
+            
+            navigate(config.navigation.successRoute, { state: { urlSlug } });
+
+        } catch (err) {
+            console.error("Une erreur est survenue dans handleSubmit :", err);
+            setModalMessage("Une erreur est survenue lors de l'inscription.");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const cssStyles = useMemo(() => `
         html, body { margin:0; padding:0; height:100%; }
@@ -242,7 +261,6 @@ export default function GlobalForm({ config: userConfig = {} }) {
                 <div className="content">
                     <div style={{backgroundColor: "white", padding: "15px", borderRadius: "10px", marginBottom: "20px", overflow: "hidden"}}>
                         <img src={getAccrocheImage} alt="Accroche" style={{width:"calc(100% + 30px)", height:"auto", display:"block", margin: "0 -15px"}}/>
-
                         <img src={config.branding.formTextImage} alt="Formulaire" style={{width:"100%", padding:"20px 0"}}/>
                         
                         <form onSubmit={handleSubmit} className="text-start">
@@ -261,7 +279,6 @@ export default function GlobalForm({ config: userConfig = {} }) {
                             </div>
                         ))}
                         
-                        {/* Ajout de la question "As-tu déjà acheté chez Bricoceram ?" */}
                         <SelectQuestion 
                             label="As-tu déjà acheté chez Bricoceram ?" 
                             name="toyoubuild" 
@@ -275,7 +292,6 @@ export default function GlobalForm({ config: userConfig = {} }) {
                         
                         <div className="form-check mt-4">
                             <input type="checkbox" name="reglement" className="form-check-input" checked={form.reglement} onChange={handleChange} disabled={loading}/>
-                            
                             <label className="form-check-label text-reglement" style={{fontSize:"0.9rem"}}>
                                 J'accepte le <a href={config.legal.regulationUrl} target="_blank" rel="noopener noreferrer" className="text-reglement text-decoration-underline">{config.legal.regulationLinkText}</a> et confirme avoir plus de 18 ans
                             </label>
@@ -292,7 +308,6 @@ export default function GlobalForm({ config: userConfig = {} }) {
                     </form>
                     </div>
                 </div>
-               
             </div>
         </div>
     );
